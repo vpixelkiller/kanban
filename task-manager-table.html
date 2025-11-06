@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestor de Tareas</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #e0e7ff 0%, #f0f4f8 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: #f8f9fa;
+            color: #343a40;
+            padding: 30px;
+            text-align: center;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .header h1 {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            padding: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 600px;
+        }
+
+        thead {
+            background: #f8f9fa;
+        }
+
+        th {
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            color: #495057;
+            border-bottom: 2px solid #dee2e6;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #e9ecef;
+            vertical-align: top;
+        }
+
+        tr:hover:not(.new-row) {
+            background: #f8f9ff;
+        }
+
+        .new-row {
+            background: #f0f8ff;
+        }
+
+        textarea, select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-family: inherit;
+            font-size: 14px;
+            resize: none;
+            overflow: hidden;
+            transition: border-color 0.3s;
+        }
+
+        textarea:focus, select:focus {
+            outline: none;
+            border-color: #6366f1;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        .view-mode {
+            min-height: 40px;
+            padding: 8px;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: background 0.2s;
+            word-wrap: break-word;
+        }
+
+        .view-mode:hover {
+            background: #e9ecef;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 500;
+        }
+
+        .status-someday { background: #e3f2fd; color: #1976d2; }
+        .status-todo { background: #fff3e0; color: #f57c00; }
+        .status-progress { background: #e8f5e9; color: #388e3c; }
+        .status-done { background: #f3e5f5; color: #7b1fa2; }
+
+        .priority-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 500;
+        }
+
+        .priority-low { background: #e8f5e9; color: #2e7d32; }
+        .priority-medium { background: #fff3e0; color: #ef6c00; }
+        .priority-high { background: #ffebee; color: #c62828; }
+
+        .actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85em;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        .btn-save {
+            background: #6366f1;
+            color: white;
+        }
+
+        .btn-save:hover {
+            background: #4f46e5;
+            transform: translateY(-1px);
+        }
+
+        .btn-delete {
+            background: #ef5350;
+            color: white;
+        }
+
+        .btn-delete:hover {
+            background: #e53935;
+            transform: translateY(-1px);
+        }
+
+        .btn-cancel {
+            background: #9e9e9e;
+            color: white;
+        }
+
+        .btn-cancel:hover {
+            background: #757575;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #6366f1;
+            font-size: 1.2em;
+        }
+
+        .error {
+            background: #ffebee;
+            color: #c62828;
+            padding: 15px;
+            margin: 20px;
+            border-radius: 4px;
+            border-left: 4px solid #c62828;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.5em;
+            }
+
+            th, td {
+                padding: 10px 8px;
+                font-size: 0.85em;
+            }
+
+            .actions {
+                flex-direction: column;
+            }
+
+            button {
+                width: 100%;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+
+            .table-container {
+                padding: 10px;
+            }
+
+            table {
+                min-width: 500px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📋 Gestor de Tareas</h1>
+            <p>Doble click para editar • Responsive</p>
+        </div>
+        <div class="table-container">
+            <div id="loading" class="loading">Cargando tareas...</div>
+            <div id="error" class="error" style="display: none;"></div>
+            <table id="taskTable" style="display: none;">
+                <thead>
+                    <tr>
+                        <th style="width: 40%">Descripción</th>
+                        <th style="width: 20%">Estado</th>
+                        <th style="width: 15%">Prioridad</th>
+                        <th style="width: 25%">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="taskBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script src="tasks.js"></script>
+    <script>
+        class TaskManager {
+            constructor() {
+                this.tasks = [];
+                this.editingId = null;
+                this.init();
+            }
+
+            async init() {
+                await this.loadTasks();
+                this.render();
+            }
+
+            async loadTasks() {
+                try {
+                    this.tasks = await TaskAPI.getTasks();
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('taskTable').style.display = 'table';
+                    this.hideError();
+                } catch (error) {
+                    this.showError('Error al cargar las tareas: ' + error.message);
+                }
+            }
+
+            showError(message) {
+                const errorDiv = document.getElementById('error');
+                errorDiv.textContent = message;
+                errorDiv.style.display = 'block';
+                document.getElementById('loading').style.display = 'none';
+            }
+
+            hideError() {
+                document.getElementById('error').style.display = 'none';
+            }
+
+            autoResize(textarea) {
+                textarea.style.height = 'auto';
+                textarea.style.height = textarea.scrollHeight + 'px';
+            }
+
+            getStatusBadge(status) {
+                const statusClass = status.toLowerCase().replace(' ', '');
+                return `<span class="status-badge status-${statusClass}">${status}</span>`;
+            }
+
+            getPriorityBadge(priority) {
+                return `<span class="priority-badge priority-${priority}">${priority}</span>`;
+            }
+
+            createEditRow(task = null) {
+                const isNew = !task;
+                const tr = document.createElement('tr');
+                if (isNew) tr.className = 'new-row';
+
+                tr.innerHTML = `
+                    <td>
+                        <textarea placeholder="Escribe la descripción de la tarea...">${task ? task.description : ''}</textarea>
+                    </td>
+                    <td>
+                        <select>
+                            <option value="Some day" ${task?.status === 'Some day' ? 'selected' : ''}>Some day</option>
+                            <option value="To do" ${task?.status === 'To do' ? 'selected' : ''}>To do</option>
+                            <option value="In progress" ${task?.status === 'In progress' ? 'selected' : ''}>In progress</option>
+                            <option value="Done" ${task?.status === 'Done' ? 'selected' : ''}>Done</option>
+                        </select>
+                    </td>
+                    <td>
+                        <select>
+                            <option value="low" ${task?.priority === 'low' ? 'selected' : ''}>Low</option>
+                            <option value="medium" ${task?.priority === 'medium' ? 'selected' : ''}>Medium</option>
+                            <option value="high" ${task?.priority === 'high' ? 'selected' : ''}>High</option>
+                        </select>
+                    </td>
+                    <td>
+                        <div class="actions">
+                            <button class="btn-save">${isNew ? '➕ Crear' : '💾 Guardar'}</button>
+                            ${!isNew ? '<button class="btn-cancel">❌ Cancelar</button>' : ''}
+                        </div>
+                    </td>
+                `;
+
+                const textarea = tr.querySelector('textarea');
+                textarea.addEventListener('input', () => this.autoResize(textarea));
+                this.autoResize(textarea);
+
+                const saveBtn = tr.querySelector('.btn-save');
+                saveBtn.addEventListener('click', () => {
+                    const description = textarea.value.trim();
+                    const status = tr.querySelectorAll('select')[0].value;
+                    const priority = tr.querySelectorAll('select')[1].value;
+
+                    if (isNew) {
+                        this.createTask(description, status, priority);
+                    } else {
+                        this.updateTask(task.id, description, status, priority);
+                    }
+                });
+
+                if (!isNew) {
+                    const cancelBtn = tr.querySelector('.btn-cancel');
+                    cancelBtn.addEventListener('click', () => {
+                        this.editingId = null;
+                        this.render();
+                    });
+                }
+
+                return tr;
+            }
+
+            createViewRow(task) {
+                const tr = document.createElement('tr');
+                tr.dataset.id = task.id;
+
+                tr.innerHTML = `
+                    <td>
+                        <div class="view-mode">${task.description}</div>
+                    </td>
+                    <td>
+                        <div class="view-mode">${this.getStatusBadge(task.status)}</div>
+                    </td>
+                    <td>
+                        <div class="view-mode">${this.getPriorityBadge(task.priority)}</div>
+                    </td>
+                    <td>
+                        <div class="actions">
+                            <button class="btn-delete">🗑️ Eliminar</button>
+                        </div>
+                    </td>
+                `;
+
+                const viewCells = tr.querySelectorAll('.view-mode');
+                viewCells.forEach(cell => {
+                    cell.addEventListener('dblclick', () => {
+                        this.editingId = task.id;
+                        this.render();
+                    });
+                });
+
+                const deleteBtn = tr.querySelector('.btn-delete');
+                deleteBtn.addEventListener('click', () => this.deleteTask(task.id));
+
+                return tr;
+            }
+
+            render() {
+                const tbody = document.getElementById('taskBody');
+                tbody.innerHTML = '';
+
+                this.tasks.forEach(task => {
+                    if (task.id === this.editingId) {
+                        tbody.appendChild(this.createEditRow(task));
+                    } else {
+                        tbody.appendChild(this.createViewRow(task));
+                    }
+                });
+
+                tbody.appendChild(this.createEditRow());
+            }
+
+            async createTask(description, status, priority) {
+                if (!description) {
+                    alert('La descripción es obligatoria');
+                    return;
+                }
+
+                try {
+                    await TaskAPI.createTask(description, status, priority);
+                    await this.loadTasks();
+                    this.render();
+                } catch (error) {
+                    alert('Error al crear la tarea: ' + error.message);
+                }
+            }
+
+            async updateTask(id, description, status, priority) {
+                if (!description) {
+                    alert('La descripción es obligatoria');
+                    return;
+                }
+
+                try {
+                    await TaskAPI.updateTask(id, description, status, priority);
+                    await this.loadTasks();
+                    this.editingId = null;
+                    this.render();
+                } catch (error) {
+                    alert('Error al actualizar la tarea: ' + error.message);
+                }
+            }
+
+            async deleteTask(id) {
+                if (!confirm('¿Estás seguro de eliminar esta tarea?')) {
+                    return;
+                }
+
+                try {
+                    await TaskAPI.deleteTask(id);
+                    await this.loadTasks();
+                    this.render();
+                } catch (error) {
+                    alert('Error al eliminar la tarea: ' + error.message);
+                }
+            }
+        }
+
+        const taskManager = new TaskManager();
+    </script>
+</body>
+</html>
