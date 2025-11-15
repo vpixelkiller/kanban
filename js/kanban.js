@@ -111,13 +111,13 @@ export class KanbanBoard {
       <div class="card-text">${task.description}</div>
       <div class="card-meta">
         <span class="priority-badge priority-${task.priority}">${task.priority}</span>
-        <button class="btn-card-delete" type="button">🗑️</button>
+        <button class="btn-card-delete" type="button">Eliminar</button>
       </div>
     `;
     const deleteBtn = card.querySelector(".btn-card-delete");
     deleteBtn.addEventListener("click", (event) => {
       event.stopPropagation();
-      if (confirm("¿Eliminar esta tarea?")) {
+      if (confirm("Vas a eliminar la tarjeta de forma definitiva. ¿Continuar?")) {
         this.deleteTask(task.id);
       }
     });
