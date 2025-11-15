@@ -19,14 +19,17 @@ export class KanbanBoard {
       loading: document.getElementById("loading"),
       error: document.getElementById("error"),
       board: document.getElementById("kanbanBoard"),
-      form: {
-        description: document.getElementById("newDescription"),
-        status: document.getElementById("newStatus"),
-        priority: document.getElementById("newPriority"),
-        createBtn: document.getElementById("createTaskBtn"),
+      modal: {
+        overlay: document.getElementById("taskModal"),
+        description: document.getElementById("modalDescription"),
+        status: document.getElementById("modalStatus"),
+        priority: document.getElementById("modalPriority"),
+        createBtn: document.getElementById("modalCreateBtn"),
+        cancelBtn: document.getElementById("modalCancelBtn"),
+        closeBtn: document.getElementById("modalCloseBtn"),
       },
     };
-    this.bindCreateForm();
+    this.bindModal();
   }
 
   async init() {
@@ -69,7 +72,20 @@ export class KanbanBoard {
       const columnEl = document.createElement("div");
       columnEl.className = "kanban-column column";
       columnEl.dataset.status = column.value;
-      columnEl.innerHTML = `<h3>${column.label}</h3>`;
+
+      const header = document.createElement("h3");
+      header.textContent = column.label;
+
+      if (column.value === "Some day") {
+        const addBtn = document.createElement("button");
+        addBtn.className = "add-card-btn";
+        addBtn.type = "button";
+        addBtn.textContent = "+ Add";
+        addBtn.addEventListener("click", () => this.openModal("Some day"));
+        header.appendChild(addBtn);
+      }
+
+      columnEl.appendChild(header);
       const wrapper = document.createElement("div");
       wrapper.className = "column";
       wrapper.dataset.status = column.value;
@@ -136,20 +152,48 @@ export class KanbanBoard {
     }
   }
 
-  bindCreateForm() {
-    const { description, status, priority, createBtn } = this.elements.form;
+  bindModal() {
+    const { overlay, createBtn, cancelBtn, closeBtn } = this.elements.modal;
     if (createBtn) {
       createBtn.addEventListener("click", () => {
+        const { description, status, priority } = this.elements.modal;
         const desc = description.value.trim();
         this.createTask(desc, status.value, priority.value);
       });
     }
+
+    const closeHandler = () => this.closeModal();
+    cancelBtn?.addEventListener("click", closeHandler);
+    closeBtn?.addEventListener("click", closeHandler);
+    overlay?.addEventListener("click", (event) => {
+      if (event.target === overlay) {
+        this.closeModal();
+      }
+    });
+  }
+
+  openModal(defaultStatus = "Some day") {
+    const { overlay, description, status, priority } = this.elements.modal;
+    if (!overlay) return;
+    description.value = "";
+    status.value = defaultStatus;
+    priority.value = "medium";
+    overlay.style.display = "flex";
+    description.focus();
+  }
+
+  closeModal() {
+    const { overlay } = this.elements.modal;
+    if (overlay) {
+      overlay.style.display = "none";
+    }
   }
 
   resetForm() {
-    const { description, status, priority } = this.elements.form;
+    const { description, status, priority } = this.elements.modal;
     description.value = "";
     status.value = "Some day";
     priority.value = "medium";
+    this.closeModal();
   }
 }
