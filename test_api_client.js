@@ -1,8 +1,4 @@
-// test_api_client.js
-import {TaskAPI} from "./tasks.js"; // Ajusta la ruta correcta si es necesario
-
-
-
+import { TaskAPI } from "./js/api.js";
 
 console.log("Testeando API REST con cliente JavaScript");
 console.log("=".repeat(50));
@@ -53,7 +49,7 @@ async function show(title, fn) {
   console.log("=".repeat(50));
 
   await show("[KO] POST sin descripción", () =>
-    TaskAPI.createTask("", "To do", "low")
+    TaskAPI.createTask("", "Today", "low")
   );
 
   await show("[KO] PUT sin ID", () =>

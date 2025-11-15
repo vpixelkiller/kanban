@@ -1,9 +1,6 @@
 #!/bin/bash
 
-# Script para testear la API RESTful del tablero Kanban
-# Asegúrate de que tu servidor esté corriendo en localhost:8000
-
-API_URL="http://localhost/kanban/tasks.php"
+API_URL="http://localhost:8080/tasks.php"
 
 echo "🚀 Testeando API RESTful - Tablero Kanban"
 echo "=========================================="

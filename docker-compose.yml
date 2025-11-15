@@ -1,0 +1,40 @@
+services:
+  php:
+    build: .
+    container_name: kanban-php
+    ports:
+      - "8080:80"
+    environment:
+      DB_HOST: mysql
+      DB_NAME: kanban_board
+      DB_USER: kanban
+      DB_PASSWORD: kanbanpass
+      DB_CHARSET: utf8mb4
+    volumes:
+      - ./apirest:/var/www/html
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  mysql:
+    image: mysql:8.0
+    container_name: kanban-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_DATABASE: kanban_board
+      MYSQL_USER: kanban
+      MYSQL_PASSWORD: kanbanpass
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./sql/database.sql:/docker-entrypoint-initdb.d/database.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  db_data:
+
