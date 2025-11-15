@@ -46,13 +46,15 @@ Tablero Kanban
      ```bash
          docker exec -it kanban-mysql mysql -u kanban -pkanbanpass kanban_board
      ```
-2. Sirve `index.html` con un servidor estático local (por ejemplo `npx serve .`) para evitar restricciones `file://`.
+2. Sirve `index.html` con un servidor estático local (por ejemplo `npx serve .`)
+   Previamente ejecuta `npm i` para instalar las dependencias.
 3. Detén y elimina contenedores cuando termines:
    ```bash
    docker compose down
    ```
 
-## Flujo recomendado con Docker
+## Test de integración Javascript
 
-1. `docker compose up --build -d`
-2. Abre `index.html` en tu navegador preferido.
+```bash
+npm test
+```
