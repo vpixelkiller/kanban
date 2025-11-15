@@ -40,6 +40,21 @@ describe("KanbanBoard integration", () => {
     jest.spyOn(DragDrop.prototype, "bind").mockImplementation(() => {});
   });
 
+  test("normalizeText converts garbled UTF-8 strings", async () => {
+    jest
+      .spyOn(TaskAPI, "getTasks")
+      .mockResolvedValue([
+        { id: 1, description: "ActualizaciÃ³n tÃ©cnica", status: "Today", priority: "high" },
+      ]);
+
+    const board = new KanbanBoard();
+    await board.init();
+
+    expect(document.querySelector(".task-card .card-text").textContent).toBe(
+      "Actualización técnica"
+    );
+  });
+
   test("renders cards received from TaskAPI", async () => {
     jest.spyOn(TaskAPI, "getTasks").mockResolvedValue([
       { id: 1, description: "Card 1", status: "Today", priority: "high" },

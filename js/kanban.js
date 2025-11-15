@@ -39,7 +39,11 @@ export class KanbanBoard {
   async refresh() {
     this.setLoading(true);
     try {
-      this.tasks = await TaskAPI.getTasks();
+      const tasks = await TaskAPI.getTasks();
+      this.tasks = tasks.map((task) => ({
+        ...task,
+        description: this.normalizeText(task.description),
+      }));
       this.setLoading(false);
       this.render();
     } catch (error) {
@@ -195,5 +199,26 @@ export class KanbanBoard {
     status.value = "Some day";
     priority.value = "medium";
     this.closeModal();
+  }
+
+  normalizeText(value) {
+    if (!value || typeof value !== "string") {
+      return value;
+    }
+    if (!/[ÃÂÊÕÕñäëïöüøÆæœ]/.test(value)) {
+      return value;
+    }
+    try {
+      const decoder = new TextDecoder("utf-8");
+      const bytes = new Uint8Array([...value].map((char) => char.charCodeAt(0)));
+      const decoded = decoder.decode(bytes);
+      return decoded.includes("�") ? value : decoded;
+    } catch {
+      try {
+        return decodeURIComponent(escape(value));
+      } catch {
+        return value;
+      }
+    }
   }
 }
