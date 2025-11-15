@@ -29,6 +29,7 @@ export class KanbanBoard {
         closeBtn: document.getElementById("modalCloseBtn"),
       },
     };
+    this.tooltip = this.createTooltip();
     this.bindModal();
   }
 
@@ -107,13 +108,25 @@ export class KanbanBoard {
     card.className = "task-card";
     card.draggable = true;
     card.dataset.id = task.id;
+    card.addEventListener("dblclick", () => this.openModal(task.status, task));
     card.innerHTML = `
-      <div class="card-text">${task.description}</div>
+      <div class="card-text" data-full-text="${task.description}">${task.description}</div>
       <div class="card-meta">
-        <span class="priority-badge priority-${task.priority}">${task.priority}</span>
+        <button class="priority-badge priority-${task.priority}" type="button" data-priority="${task.priority}">${task.priority}</button>
         <button class="btn-card-delete" type="button">Eliminar</button>
       </div>
     `;
+    const textBlock = card.querySelector(".card-text");
+    textBlock.addEventListener("mouseenter", (event) =>
+      this.showTooltip(task.description, event, textBlock)
+    );
+    textBlock.addEventListener("mousemove", (event) => this.positionTooltip(event));
+    textBlock.addEventListener("mouseleave", () => this.hideTooltip());
+    const priorityBtn = card.querySelector(".priority-badge");
+    priorityBtn.addEventListener("click", (event) => {
+      event.stopPropagation();
+      this.cyclePriority(task);
+    });
     const deleteBtn = card.querySelector(".btn-card-delete");
     deleteBtn.addEventListener("click", (event) => {
       event.stopPropagation();
@@ -131,6 +144,20 @@ export class KanbanBoard {
     }
     try {
       await TaskAPI.createTask(description, status, priority);
+      this.resetForm();
+      await this.refresh();
+    } catch (error) {
+      alert(error.message);
+    }
+  }
+
+  async updateTask(id, description, status, priority) {
+    if (!description) {
+      alert("La descripción es obligatoria");
+      return;
+    }
+    try {
+      await TaskAPI.updateTask(id, description, status, priority);
       this.resetForm();
       await this.refresh();
     } catch (error) {
@@ -158,11 +185,17 @@ export class KanbanBoard {
 
   bindModal() {
     const { overlay, createBtn, cancelBtn, closeBtn } = this.elements.modal;
+    this.modalMode = "create";
+    this.editingTaskId = null;
     if (createBtn) {
       createBtn.addEventListener("click", () => {
         const { description, status, priority } = this.elements.modal;
         const desc = description.value.trim();
-        this.createTask(desc, status.value, priority.value);
+        if (this.modalMode === "edit" && this.editingTaskId) {
+          this.updateTask(this.editingTaskId, desc, status.value, priority.value);
+        } else {
+          this.createTask(desc, status.value, priority.value);
+        }
       });
     }
 
@@ -176,12 +209,24 @@ export class KanbanBoard {
     });
   }
 
-  openModal(defaultStatus = "Some day") {
-    const { overlay, description, status, priority } = this.elements.modal;
+  openModal(defaultStatus = "Some day", task = null) {
+    const { overlay, description, status, priority, createBtn } = this.elements.modal;
     if (!overlay) return;
-    description.value = "";
-    status.value = defaultStatus;
-    priority.value = "medium";
+    if (task) {
+      this.modalMode = "edit";
+      this.editingTaskId = task.id;
+      description.value = task.description;
+      status.value = task.status;
+      priority.value = task.priority;
+      createBtn.textContent = "Actualizar";
+    } else {
+      this.modalMode = "create";
+      this.editingTaskId = null;
+      description.value = "";
+      status.value = defaultStatus;
+      priority.value = "medium";
+      createBtn.textContent = "Crear tarea";
+    }
     overlay.style.display = "flex";
     description.focus();
   }
@@ -219,6 +264,59 @@ export class KanbanBoard {
       } catch {
         return value;
       }
+    }
+  }
+
+  createTooltip() {
+    const tooltip = document.createElement("div");
+    tooltip.className = "card-tooltip";
+    document.body.appendChild(tooltip);
+    return tooltip;
+  }
+
+  showTooltip(text, event, target) {
+    if (!text || !this.tooltip || !target) return;
+    if (!this.isTextTruncated(target)) {
+      this.hideTooltip();
+      return;
+    }
+    this.tooltip.textContent = text;
+    this.tooltip.style.display = "block";
+    this.positionTooltip(event);
+  }
+
+  positionTooltip(event) {
+    if (!this.tooltip || this.tooltip.style.display === "none") {
+      return;
+    }
+    const offset = 16;
+    const { clientX, clientY } = event;
+    this.tooltip.style.left = `${clientX + offset}px`;
+    this.tooltip.style.top = `${clientY + offset}px`;
+  }
+
+  hideTooltip() {
+    if (this.tooltip) {
+      this.tooltip.style.display = "none";
+    }
+  }
+
+  isTextTruncated(element) {
+    if (!element) {
+      return false;
+    }
+    return element.scrollHeight - 1 > element.clientHeight;
+  }
+
+  async cyclePriority(task) {
+    const order = ["low", "medium", "high", "top"];
+    const currentIndex = order.indexOf(task.priority);
+    const nextPriority = order[(currentIndex + 1) % order.length];
+    try {
+      await TaskAPI.patchTask(task.id, { priority: nextPriority });
+      await this.refresh();
+    } catch (error) {
+      alert(error.message);
     }
   }
 }

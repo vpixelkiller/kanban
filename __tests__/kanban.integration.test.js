@@ -97,4 +97,55 @@ describe("KanbanBoard integration", () => {
 
     expect(TaskAPI.patchTask).toHaveBeenCalledWith(1, { status: "Done" });
   });
+
+  test("double click opens modal and updates task via TaskAPI.updateTask", async () => {
+    jest
+      .spyOn(TaskAPI, "getTasks")
+      .mockResolvedValue([
+        { id: 10, description: "Old text", status: "Today", priority: "medium" },
+      ]);
+    jest.spyOn(TaskAPI, "updateTask").mockResolvedValue({
+      id: 10,
+      description: "Updated",
+      status: "Today",
+      priority: "high",
+    });
+
+    const board = new KanbanBoard();
+    await board.init();
+
+    const card = document.querySelector(".task-card");
+    card.dispatchEvent(new Event("dblclick", { bubbles: true }));
+
+    const description = document.getElementById("modalDescription");
+    const priority = document.getElementById("modalPriority");
+    description.value = "Updated";
+    priority.value = "high";
+
+    document.getElementById("modalCreateBtn").click();
+
+    expect(TaskAPI.updateTask).toHaveBeenCalledWith(10, "Updated", "Today", "high");
+  });
+
+  test("priority badge cycles and calls TaskAPI.patchTask", async () => {
+    jest
+      .spyOn(TaskAPI, "getTasks")
+      .mockResolvedValue([
+        { id: 5, description: "Priority test", status: "Today", priority: "high" },
+      ]);
+    jest.spyOn(TaskAPI, "patchTask").mockResolvedValue({
+      id: 5,
+      description: "Priority test",
+      status: "Today",
+      priority: "top",
+    });
+
+    const board = new KanbanBoard();
+    await board.init();
+
+    const badge = document.querySelector(".priority-badge");
+    badge.click();
+
+    expect(TaskAPI.patchTask).toHaveBeenCalledWith(5, { priority: "top" });
+  });
 });
