@@ -141,6 +141,7 @@ select:focus {
   border: 2px dashed transparent;
   border-radius: 8px;
   transition: border 0.2s, background 0.2s;
+  touch-action: none;
 }
 
 .column.drag-over {
@@ -163,6 +164,7 @@ select:focus {
   flex-direction: column;
   gap: 10px;
   min-height: 0;
+  touch-action: none;
 }
 
 .card-text {
@@ -413,6 +415,58 @@ select:focus {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@media (max-width: 1024px) {
+  .container {
+    margin: 0 8px;
+  }
+
+  .kanban-board {
+    min-width: 1200px;
+    grid-template-columns: repeat(4, minmax(220px, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  body {
+    padding: 16px;
+  }
+
+  .container {
+    border-radius: 12px;
+    max-width: 100%;
+  }
+
+  .header {
+    padding: 20px 16px;
+  }
+
+  .board-wrapper {
+    overflow-x: visible;
+  }
+
+  .kanban-board {
+    min-width: 0;
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .kanban-column {
+    min-height: auto;
+  }
+
+  .kanban-column .column {
+    min-height: 0;
+  }
+
+  .task-card {
+    padding: 10px 12px;
+  }
+
+  .card-tooltip {
+    max-width: 80vw;
   }
 }
 
